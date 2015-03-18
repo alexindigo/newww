@@ -187,6 +187,10 @@ if (fs.existsSync('./config.admin.js')) {
   Hoek.merge(config, require('./config.admin'), false);
 }
 
+if (fs.existsSync('./__local/config.js')) {
+  Hoek.merge(config, require('./__local/config.js'), false);
+}
+
 // stamp data for templates
 var gitHead;
 try {

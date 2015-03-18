@@ -1,4 +1,5 @@
-var gulp = require('gulp'),
+var fs = require('fs'),
+    gulp = require('gulp'),
     nib = require('nib'),
     stylus = require('gulp-stylus'),
     uglify = require('gulp-uglify'),
@@ -14,16 +15,17 @@ var gulp = require('gulp'),
     pngcrush = require('imagemin-pngcrush');
 
 var paths = {
-  fonts: ['./assets/fonts/*'],
-  styles: ['./assets/styles/*.styl'],
-  images: ['./assets/images/*'],
-  misc: ['./assets/misc/*'],
+  fonts: ['./assets/fonts/*', './__local/assets/fonts/*'],
+  styles: ['./assets/styles/*.styl', './__local/assets/styles/*.styl'],
+  images: ['./assets/images/*', './__local/assets/images/*'],
+  misc: ['./assets/misc/*', './__local/assets/misc/*'],
   scripts: {
-    browserify: ["./assets/scripts/*.js"],
-    vendor: ["./assets/scripts/vendor/*.js"]
+    browserify: ["./assets/scripts/*.js", "./__local/assets/scripts/*.js"],
+    vendor: ["./assets/scripts/vendor/*.js", "./__local/assets/scripts/vendor/*.js"]
   },
-  templates: ['./assets/templates/*.hbs'],
+  templates: ['./assets/templates/*.hbs', './__local/assets/templates/*.hbs'],
   lintables: [
+    "./__local/assets/scripts/**/*.js",
     "./assets/scripts/**/*.js",
     "./adapters/**/*.js",
     "./facets/**/*.js",
@@ -44,19 +46,31 @@ gulp.task('watch', function(){
 });
 
 gulp.task('styles', function () {
-  gulp.src('./assets/styles/index.styl')
+  gulp.src(['./assets/styles/index.styl', './__local/assets/styles/index.styl'])
     .pipe(stylus({use: [nib()]}))
+    .pipe(concat('index.css'))
     .pipe(gulp.dest('static/css/'))
 });
 
 gulp.task('browserify', function () {
-  browserify("./assets/scripts/index.js")
-    .bundle()
-    .pipe(source('index.js'))
-    .pipe(gulp.dest('static/js/'))
-    .pipe(rename('index.min.js'))
-    .pipe(streamify(uglify()))
-    .pipe(gulp.dest('static/js/'));
+  var entries = ['./assets/scripts/index.js'],
+      customJs = './__local/assets/scripts/index.js';
+
+  // add custom js
+  fs.exists(customJs, function (exists) {
+    if (exists)
+    {
+      entries.push(customJs);
+    }
+
+    browserify({entries: entries})
+      .bundle()
+      .pipe(source('index.js'))
+      .pipe(gulp.dest('static/js/'))
+      .pipe(rename('index.min.js'))
+      .pipe(streamify(uglify()))
+      .pipe(gulp.dest('static/js/'));
+  });
 });
 
 gulp.task('concat', function () {
