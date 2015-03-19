@@ -1,6 +1,7 @@
 require("dotenv").load();
 
-var _       = require('lodash'),
+var fs      = require('fs'),
+    _       = require('lodash'),
     assert  = require('assert'),
     config  = require('./config.js'),
     Hapi    = require('hapi'),
@@ -69,6 +70,8 @@ server.register(require('hapi-auth-cookie'), function (err) {
 
   var plugins = require('./adapters/plugins');
   server.register(plugins, function(err) {
+    var routes;
+
     if (err) {
       // actually, if there's something wrong with plugin loading,
       // DO NOT PASS GO, DO NOT COLLECT $200. Throw the error.
@@ -78,15 +81,26 @@ server.register(require('hapi-auth-cookie'), function (err) {
     replify({ name: 'www-'+config.port }, server, { 'config': config,  });
     log.info('server repl socket at /tmp/rpl/www-'+config.port+'.sock');
 
-    server.route(require('./routes'));
+    routes = require('./routes');
+    // extend routes with local ones
+    fs.exists('./__local/routes.js', function(exists)
+    {
+      if (exists)
+      {
+        routes = routes.concat(require('./__local/routes.js'));
+      }
 
-    server.start(function() {
-      metrics.metric({
-        env: process.env.NODE_ENV,
-        name: 'server.start'
+      server.route(routes);
+
+      server.start(function() {
+        metrics.metric({
+          env: process.env.NODE_ENV,
+          name: 'server.start'
+        });
+
+        log.info('Hapi server started @ ' + server.info.uri);
       });
-
-      log.info('Hapi server started @ ' + server.info.uri);
     });
+
   });
 });

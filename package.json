@@ -1,6 +1,6 @@
 {
   "name": "newww",
-  "version": "2.1.0-trulia-1",
+  "version": "2.1.0-trulia-2",
   "description": "The npmjs.com website",
   "main": "server.js",
   "scripts": {
